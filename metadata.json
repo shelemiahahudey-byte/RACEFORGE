@@ -1,0 +1,6 @@
+{
+  "name": "Raceforge",
+  "description": "Build Your Machine. Master the Track. The definitive online 3D racing experience.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

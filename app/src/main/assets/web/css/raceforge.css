@@ -1,0 +1,978 @@
+/* ==============================================================================
+   RACEFORGE — STYLESHEET
+   Cinematic Motorsport Aesthetics, Dark Carbon Fiber & Neon Telemetry
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --rf-bg-dark: #07090E;
+  --rf-bg-card: rgba(16, 22, 34, 0.88);
+  --rf-bg-panel: rgba(10, 14, 22, 0.94);
+  --rf-border-glow: rgba(255, 69, 0, 0.35);
+  --rf-primary: #FF4500;         /* Raceforge Ignition Orange */
+  --rf-primary-glow: #FF6A00;
+  --rf-accent-cyan: #00F0FF;     /* Telemetry Cyan */
+  --rf-accent-gold: #FFD700;     /* Trophy Gold */
+  --rf-text-light: #F0F4F8;
+  --rf-text-muted: #8A99AD;
+  --rf-danger: #FF2A4D;
+  --rf-success: #00FF88;
+  --font-racing: 'Chakra Petch', sans-serif;
+  --font-hud: 'Rajdhani', sans-serif;
+  --font-ui: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--rf-bg-dark);
+  color: var(--rf-text-light);
+  font-family: var(--font-ui);
+  position: fixed;
+}
+
+#rf-app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 3D WebGL Canvas */
+#game-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: block;
+  outline: none;
+}
+
+/* CRT Scanline & Motorsport Vignette Overlay */
+.screen-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.85);
+  background: radial-gradient(circle at center, transparent 60%, rgba(3, 5, 8, 0.6) 100%);
+}
+
+/* Common UI Layer Container */
+.ui-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: auto;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ui-layer.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.98);
+}
+
+/* Loading Screen */
+#loading-screen {
+  background: radial-gradient(circle at center, #141B29 0%, #06080D 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.brand-title {
+  font-family: var(--font-racing);
+  font-size: 3.8rem;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFA07A 50%, #FF4500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 35px rgba(255, 69, 0, 0.6);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.brand-tagline {
+  font-family: var(--font-hud);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 6px;
+  color: var(--rf-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 40px;
+}
+
+.loading-progress-container {
+  width: 380px;
+  max-width: 85%;
+  background: rgba(255, 255, 255, 0.08);
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 69, 0, 0.4);
+  box-shadow: 0 0 15px rgba(255, 69, 0, 0.3);
+}
+
+.loading-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #FF4500, #00F0FF);
+  transition: width 0.25s ease-out;
+  box-shadow: 0 0 12px #FF4500;
+}
+
+.loading-stage-text {
+  font-family: var(--font-hud);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--rf-accent-cyan);
+  letter-spacing: 2px;
+  margin-top: 14px;
+  text-transform: uppercase;
+}
+
+/* Top Navigation Bar */
+.rf-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  padding: 0 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  background: linear-gradient(180deg, rgba(7, 9, 14, 0.95) 0%, rgba(7, 9, 14, 0.4) 80%, transparent 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.brand-mini-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #FF4500, #9400D3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(255, 69, 0, 0.5);
+  font-family: var(--font-racing);
+  font-weight: 700;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.topbar-brand h1 {
+  font-family: var(--font-racing);
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 2px;
+  color: white;
+}
+
+.topbar-profile {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: var(--font-hud);
+}
+
+.profile-badge {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+
+.credits-pill {
+  color: var(--rf-accent-gold);
+  font-weight: 700;
+}
+
+.level-pill {
+  color: var(--rf-accent-cyan);
+  font-weight: 700;
+}
+
+.rank-tag {
+  background: linear-gradient(90deg, #FF4500, #E65100);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Main Menu Navigation Panel */
+.menu-container {
+  position: absolute;
+  top: 90px;
+  bottom: 30px;
+  left: 40px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  z-index: 15;
+}
+
+.menu-item-btn {
+  position: relative;
+  background: linear-gradient(90deg, rgba(20, 26, 38, 0.85) 0%, rgba(20, 26, 38, 0.4) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--rf-text-muted);
+  color: var(--rf-text-light);
+  padding: 14px 20px;
+  font-family: var(--font-racing);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 0 8px 8px 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.menu-item-btn:hover, .menu-item-btn:focus {
+  background: linear-gradient(90deg, rgba(255, 69, 0, 0.3) 0%, rgba(20, 26, 38, 0.6) 100%);
+  border-left-color: var(--rf-primary);
+  transform: translateX(12px);
+  color: #FFFFFF;
+  box-shadow: -5px 0 20px rgba(255, 69, 0, 0.4);
+}
+
+.menu-item-btn.primary-highlight {
+  background: linear-gradient(90deg, rgba(255, 69, 0, 0.8) 0%, rgba(200, 50, 0, 0.5) 100%);
+  border-left-color: #FFFFFF;
+  color: white;
+  box-shadow: 0 0 25px rgba(255, 69, 0, 0.5);
+}
+
+.menu-item-btn.primary-highlight:hover {
+  background: linear-gradient(90deg, rgba(255, 100, 0, 0.95) 0%, rgba(220, 60, 0, 0.7) 100%);
+  transform: translateX(16px);
+}
+
+/* Hero Showcase Card */
+.hero-stats-card {
+  position: absolute;
+  top: 90px;
+  right: 40px;
+  width: 380px;
+  background: var(--rf-bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  z-index: 15;
+}
+
+.hero-stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+.hero-vehicle-name {
+  font-family: var(--font-racing);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.hero-vehicle-class {
+  font-family: var(--font-hud);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--rf-accent-cyan);
+}
+
+/* Radar & Stat Bars */
+.stat-row {
+  margin-bottom: 12px;
+}
+
+.stat-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-hud);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--rf-text-muted);
+  margin-bottom: 4px;
+}
+
+.stat-val {
+  color: white;
+  font-weight: 700;
+}
+
+.stat-bar-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF4500, #00F0FF);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Modal Windows (Garage, Career, Leaderboard, Settings, etc.) */
+.rf-modal {
+  position: absolute;
+  top: 80px;
+  left: 40px;
+  right: 40px;
+  bottom: 30px;
+  background: var(--rf-bg-panel);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  backdrop-filter: blur(20px);
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.8);
+}
+
+.rf-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.rf-modal-title {
+  font-family: var(--font-racing);
+  font-size: 2rem;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 2px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rf-modal-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--rf-text-light);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.rf-modal-close-btn:hover {
+  background: var(--rf-danger);
+  border-color: var(--rf-danger);
+  color: white;
+}
+
+.rf-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Custom Scrollbars */
+.rf-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.rf-modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+.rf-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 69, 0, 0.4);
+  border-radius: 3px;
+}
+
+/* Grids & Cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.selection-card {
+  background: rgba(20, 26, 38, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.selection-card:hover {
+  border-color: var(--rf-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(255, 69, 0, 0.2);
+  background: rgba(26, 34, 50, 0.85);
+}
+
+.selection-card.selected {
+  border-color: var(--rf-accent-cyan);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  background: rgba(16, 36, 52, 0.85);
+}
+
+.selection-card.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Buttons */
+.rf-btn {
+  background: linear-gradient(90deg, #FF4500, #FF6A00);
+  border: none;
+  color: white;
+  font-family: var(--font-racing);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
+}
+
+.rf-btn:hover {
+  background: linear-gradient(90deg, #FF5500, #FF7B00);
+  box-shadow: 0 0 25px rgba(255, 69, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+.rf-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+
+.rf-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: white;
+}
+
+/* ==============================================================================
+   RACING IN-GAME HUD
+   ============================================================================== */
+#racing-hud {
+  pointer-events: none;
+  display: block;
+}
+
+/* Top Timing Header */
+.hud-top-bar {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 24px;
+  background: rgba(10, 14, 22, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 10px 24px;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  font-family: var(--font-hud);
+}
+
+.hud-timing-block {
+  text-align: center;
+}
+
+.hud-timing-label {
+  font-size: 0.8rem;
+  color: var(--rf-text-muted);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.hud-timing-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 1px;
+}
+
+/* Position Callout (Top Left) */
+.hud-position-box {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  background: rgba(10, 14, 22, 0.85);
+  border-left: 4px solid var(--rf-primary);
+  padding: 10px 20px;
+  border-radius: 0 8px 8px 0;
+  backdrop-filter: blur(8px);
+  font-family: var(--font-racing);
+}
+
+.hud-pos-big {
+  font-size: 2.6rem;
+  font-weight: 700;
+  font-style: italic;
+  color: white;
+}
+
+.hud-pos-suffix {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--rf-primary);
+}
+
+.hud-pos-total {
+  font-family: var(--font-hud);
+  font-size: 1.1rem;
+  color: var(--rf-text-muted);
+}
+
+/* Minimap (Top Right) */
+.hud-minimap-container {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  width: 170px;
+  height: 170px;
+  background: rgba(10, 14, 22, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+#minimap-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Tachometer & Speedometer (Bottom Right) */
+.hud-cluster-bottom-right {
+  position: absolute;
+  bottom: 24px;
+  right: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--font-hud);
+}
+
+.speedometer-gauge {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.speed-digital {
+  font-size: 4.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: white;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+}
+
+.speed-unit {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--rf-text-muted);
+  letter-spacing: 2px;
+}
+
+.gear-indicator {
+  font-family: var(--font-racing);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--rf-primary);
+  background: rgba(255, 69, 0, 0.15);
+  border: 1px solid var(--rf-primary);
+  padding: 2px 14px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.rpm-bar-container {
+  width: 240px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+  position: relative;
+}
+
+.rpm-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #00FF88 0%, #FFD700 70%, #FF2A4D 92%);
+  transition: width 0.05s linear;
+}
+
+/* Vehicle Telemetry & Tires (Bottom Left) */
+.hud-telemetry-bottom-left {
+  position: absolute;
+  bottom: 24px;
+  left: 28px;
+  background: rgba(10, 14, 22, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 14px 18px;
+  backdrop-filter: blur(8px);
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  font-family: var(--font-hud);
+}
+
+.tire-grid {
+  display: grid;
+  grid-template-columns: 36px 36px;
+  gap: 8px 12px;
+}
+
+.tire-badge {
+  background: rgba(0, 255, 136, 0.2);
+  border: 1px solid #00FF88;
+  color: #00FF88;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 2px;
+  border-radius: 4px;
+}
+
+.tire-badge.worn {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #FFD700;
+  color: #FFD700;
+}
+
+.tire-badge.critical {
+  background: rgba(255, 42, 77, 0.2);
+  border-color: #FF2A4D;
+  color: #FF2A4D;
+  animation: pulseCritical 0.6s infinite alternate;
+}
+
+@keyframes pulseCritical {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+.telemetry-bars-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 120px;
+}
+
+.telemetry-mini-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--rf-text-muted);
+}
+
+/* Race Countdown Overlay */
+#race-countdown-overlay {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-racing);
+  font-size: 7rem;
+  font-weight: 700;
+  font-style: italic;
+  color: white;
+  text-shadow: 0 0 50px rgba(255, 69, 0, 0.8);
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
+}
+
+#race-countdown-overlay.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+/* Drift Points Notification */
+#drift-notification {
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-racing);
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--rf-accent-cyan);
+  text-shadow: 0 0 20px rgba(0, 240, 255, 0.8);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+#drift-notification.active {
+  opacity: 1;
+  transform: translateX(-50%) scale(1.1);
+}
+
+/* Mobile On-Screen Controls */
+.mobile-controls-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 25;
+  display: none;
+}
+
+.touch-btn {
+  position: absolute;
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-racing);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  backdrop-filter: blur(6px);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.touch-btn:active {
+  background: rgba(255, 69, 0, 0.5);
+  border-color: #FF4500;
+  transform: scale(0.92);
+}
+
+/* Steer Left / Right */
+#touch-steer-left {
+  bottom: 30px;
+  left: 30px;
+  width: 72px;
+  height: 72px;
+}
+
+#touch-steer-right {
+  bottom: 30px;
+  left: 115px;
+  width: 72px;
+  height: 72px;
+}
+
+/* Accelerator, Brake, Handbrake */
+#touch-accelerate {
+  bottom: 30px;
+  right: 30px;
+  width: 80px;
+  height: 80px;
+  background: rgba(0, 255, 136, 0.25);
+  border-color: #00FF88;
+}
+
+#touch-brake {
+  bottom: 30px;
+  right: 125px;
+  width: 70px;
+  height: 70px;
+  background: rgba(255, 42, 77, 0.25);
+  border-color: #FF2A4D;
+}
+
+#touch-handbrake {
+  bottom: 120px;
+  right: 35px;
+  width: 65px;
+  height: 65px;
+  background: rgba(255, 69, 0, 0.25);
+  border-color: #FF4500;
+}
+
+#touch-boost {
+  bottom: 120px;
+  right: 125px;
+  width: 65px;
+  height: 65px;
+  background: rgba(0, 240, 255, 0.25);
+  border-color: #00F0FF;
+}
+
+#touch-camera-switch {
+  top: 24px;
+  left: 170px;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+/* Post-Race Results Screen */
+.results-card {
+  max-width: 620px;
+  margin: 0 auto;
+  background: var(--rf-bg-panel);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.results-position-title {
+  font-family: var(--font-racing);
+  font-size: 3.5rem;
+  font-weight: 700;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.results-position-title.p1 {
+  color: var(--rf-accent-gold);
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+}
+
+.results-grid-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.results-stat-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.results-stat-label {
+  font-family: var(--font-hud);
+  font-size: 0.85rem;
+  color: var(--rf-text-muted);
+}
+
+.results-stat-val {
+  font-family: var(--font-hud);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 850px) {
+  .menu-container {
+    width: 260px;
+    left: 20px;
+  }
+  .menu-item-btn {
+    font-size: 1.05rem;
+    padding: 10px 14px;
+  }
+  .hero-stats-card {
+    display: none;
+  }
+  .rf-topbar {
+    padding: 0 16px;
+    height: 60px;
+  }
+  .topbar-brand h1 {
+    font-size: 1.4rem;
+  }
+  .mobile-controls-layer {
+    display: block;
+  }
+  .speed-digital {
+    font-size: 3.2rem;
+  }
+  .hud-cluster-bottom-right {
+    bottom: 120px;
+    right: 20px;
+  }
+  .hud-telemetry-bottom-left {
+    bottom: 120px;
+    left: 20px;
+    padding: 8px 12px;
+  }
+}

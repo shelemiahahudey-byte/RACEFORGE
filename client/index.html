@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RACEFORGE — The Definitive 3D Racing Experience</title>
+  <link rel="stylesheet" href="css/raceforge.css">
+  <!-- Three.js 3D Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="rf-app">
+    <!-- 3D WebGL Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Motorsport Vignette Overlay -->
+    <div id="screen-vignette" class="screen-vignette"></div>
+
+    <!-- 1. LOADING SCREEN -->
+    <div id="loading" class="ui-layer">
+      <div id="loading-screen" class="ui-layer">
+        <h1 class="brand-title">RACEFORGE</h1>
+        <p class="brand-tagline">The Definitive Motorsport Experience</p>
+        <div class="loading-progress-container">
+          <div id="loading-bar" class="loading-progress-bar"></div>
+        </div>
+        <div id="loading-stage" class="loading-stage-text">IGNITING SIMULATION ENGINE...</div>
+      </div>
+    </div>
+
+    <!-- TOPBAR -->
+    <header class="rf-topbar">
+      <div class="topbar-brand" data-screen="main-menu">
+        <div class="brand-mini-logo">RF</div>
+        <h1>RACEFORGE</h1>
+      </div>
+      <div class="topbar-profile">
+        <div class="profile-badge">
+          <span style="color: var(--rf-text-muted); font-size: 0.85rem;">CREDITS</span>
+          <span id="topbar-credits" class="credits-pill">$15,000</span>
+        </div>
+        <div class="profile-badge">
+          <span style="color: var(--rf-text-muted); font-size: 0.85rem;">LVL</span>
+          <span id="topbar-level" class="level-pill">1</span>
+        </div>
+        <span id="topbar-rank" class="rank-tag">ROOKIE</span>
+      </div>
+    </header>
+
+    <!-- 2. MAIN MENU LAYER -->
+    <div id="main-menu" class="ui-layer hidden">
+      <div class="menu-container">
+        <button class="menu-item-btn primary-highlight" data-screen="quick-race-modal">
+          ⚡ QUICK RACE
+        </button>
+        <button class="menu-item-btn" data-screen="career-modal">
+          🏆 CAREER SERIES
+        </button>
+        <button class="menu-item-btn" data-screen="multiplayer-modal">
+          🌐 MULTIPLAYER LOBBY
+        </button>
+        <button class="menu-item-btn" data-screen="garage-modal">
+          🔧 PADDOCK GARAGE
+        </button>
+        <button class="menu-item-btn" data-screen="leaderboard-modal">
+          ⏱️ LEADERBOARDS
+        </button>
+        <button class="menu-item-btn" data-screen="settings-modal">
+          ⚙️ SETTINGS
+        </button>
+      </div>
+
+      <!-- Vehicle Showcase Info Card -->
+      <div class="hero-stats-card">
+        <div class="hero-stats-header">
+          <span class="hero-vehicle-name">APEX PULSE GT</span>
+          <span class="hero-vehicle-class">CLASS S • PR 640</span>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label-row"><span>HORSEPOWER</span><span class="stat-val">520 HP</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 74%;"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label-row"><span>TOP SPEED</span><span class="stat-val">320 KM/H</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 80%;"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label-row"><span>LATERAL GRIP</span><span class="stat-val">1.25 G</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 78%;"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label-row"><span>BRAKING</span><span class="stat-val">8.8 / 10</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill" style="width: 88%;"></div></div>
+        </div>
+        <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.85rem; color: var(--rf-accent-cyan);">TIRE COMPOUND: MEDIUM</span>
+          <button class="rf-btn" style="padding: 8px 16px; font-size: 0.9rem;" data-screen="garage-modal">UPGRADE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. QUICK RACE MODAL -->
+    <div id="quick-race-modal" class="ui-layer hidden">
+      <div class="rf-modal">
+        <div class="rf-modal-header">
+          <h2 class="rf-modal-title">⚡ QUICK RACE DISPATCH</h2>
+          <button class="rf-modal-close-btn">&times;</button>
+        </div>
+        <div class="rf-modal-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div>
+              <label style="font-family: var(--font-hud); font-weight: 700; color: var(--rf-text-muted); display: block; margin-bottom: 8px;">SELECT CIRCUIT</label>
+              <select id="select-track" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: white; font-family: var(--font-racing); font-size: 1.1rem; margin-bottom: 20px;">
+                <option value="1">Harbor Run (Coastal Harbor • 3,200m)</option>
+                <option value="2">Accra Circuit (Urban Metropolis • 4,550m)</option>
+                <option value="3">Desert Apex (Canyon Dunes • 5,200m)</option>
+                <option value="4">Mountain Pass (Alpine Touge • 6,100m)</option>
+                <option value="5">Neon Grand Prix (Cyberpunk Night • 4,800m)</option>
+              </select>
+
+              <label style="font-family: var(--font-hud); font-weight: 700; color: var(--rf-text-muted); display: block; margin-bottom: 8px;">WEATHER CONDITIONS</label>
+              <select id="select-weather" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: white; font-family: var(--font-racing); font-size: 1.1rem; margin-bottom: 20px;">
+                <option value="CLEAR">Clear Skies (Optimal Grip)</option>
+                <option value="RAIN">Rain (Slick Asphalt & Hydroplaning)</option>
+                <option value="FOG">Dense Morning Fog (Low Visibility)</option>
+              </select>
+
+              <label style="font-family: var(--font-hud); font-weight: 700; color: var(--rf-text-muted); display: block; margin-bottom: 8px;">LAPS</label>
+              <select id="select-laps" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: white; font-family: var(--font-racing); font-size: 1.1rem; margin-bottom: 24px;">
+                <option value="2">2 Laps (Sprint)</option>
+                <option value="3" selected>3 Laps (Standard Grand Prix)</option>
+                <option value="5">5 Laps (Endurance)</option>
+              </select>
+
+              <button id="btn-start-quick-race" class="rf-btn" style="width: 100%; padding: 16px; font-size: 1.3rem;">
+                IGNITE ENGINE & RACE
+              </button>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.4); border-radius: 10px; padding: 20px; border: 1px solid rgba(255,255,255,0.06);">
+              <h3 style="font-family: var(--font-racing); color: var(--rf-accent-cyan); margin-bottom: 12px;">CIRCUIT TELEMETRY BRIEF</h3>
+              <p style="color: var(--rf-text-muted); line-height: 1.6; margin-bottom: 16px;">
+                High-speed asphalt circuit featuring rapid chicanes, technical hairpins, and elevation shifts.
+                Ensure tire compound matches anticipated road moisture to mitigate spinouts.
+              </p>
+              <div style="background: rgba(255,69,0,0.1); border-left: 3px solid #FF4500; padding: 10px 14px; border-radius: 4px; font-size: 0.9rem; color: #FFA07A;">
+                💡 Pro Tip: Tap <b>SPACE</b> or tap <b>HANDBRAKE</b> to initiate a controlled drift around hairpins for bonus credits and multiplier boost!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. GARAGE WORKSHOP MODAL -->
+    <div id="garage-modal" class="ui-layer hidden">
+      <div class="rf-modal">
+        <div class="rf-modal-header">
+          <h2 class="rf-modal-title">🔧 PADDOCK GARAGE & TUNING</h2>
+          <button class="rf-modal-close-btn">&times;</button>
+        </div>
+        <div class="rf-modal-body">
+          <div id="garage-cars-grid" class="cards-grid">
+            <!-- Populated dynamically via API -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. CAREER SERIES MODAL -->
+    <div id="career-modal" class="ui-layer hidden">
+      <div class="rf-modal">
+        <div class="rf-modal-header">
+          <h2 class="rf-modal-title">🏆 MOTORSPORT CAREER SERIES</h2>
+          <button class="rf-modal-close-btn">&times;</button>
+        </div>
+        <div class="rf-modal-body">
+          <div id="career-events-grid" class="cards-grid">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. MULTIPLAYER MODAL -->
+    <div id="multiplayer-modal" class="ui-layer hidden">
+      <div class="rf-modal">
+        <div class="rf-modal-header">
+          <h2 class="rf-modal-title">🌐 REAL-TIME MULTIPLAYER PADDOCK</h2>
+          <button class="rf-modal-close-btn">&times;</button>
+        </div>
+        <div class="rf-modal-body">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-family: var(--font-racing); color: white;">ACTIVE GRAND PRIX ROOMS</h3>
+            <button class="rf-btn" onclick="window.gameEngine.multiplayerClient.createRoom('Apex Championship', 1, 'CLEAR', 3, 'Driver', 1)">
+              + CREATE NEW ROOM
+            </button>
+          </div>
+          <div id="mp-rooms-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. LEADERBOARDS MODAL -->
+    <div id="leaderboard-modal" class="ui-layer hidden">
+      <div class="rf-modal">
+        <div class="rf-modal-header">
+          <h2 class="rf-modal-title">⏱️ GLOBAL LAP RECORDS</h2>
+          <button class="rf-modal-close-btn">&times;</button>
+        </div>
+        <div class="rf-modal-body">
+          <div id="leaderboard-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. SETTINGS MODAL -->
+    <div id="settings-modal" class="ui-layer hidden">
+      <div class="rf-modal">
+        <div class="rf-modal-header">
+          <h2 class="rf-modal-title">⚙️ RACEFORGE SETTINGS</h2>
+          <button class="rf-modal-close-btn">&times;</button>
+        </div>
+        <div class="rf-modal-body">
+          <div style="max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+            <div>
+              <label style="font-family: var(--font-hud); font-weight: 700; color: var(--rf-text-muted); display: block; margin-bottom: 6px;">GRAPHICS PRESET</label>
+              <select style="width: 100%; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: white;">
+                <option>Ultra (Antialiased + High Shadows + Weather)</option>
+                <option selected>High (Optimized 60 FPS)</option>
+                <option>Performance (Battery Saver)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-family: var(--font-hud); font-weight: 700; color: var(--rf-text-muted); display: block; margin-bottom: 6px;">DRIVING ASSISTS</label>
+              <div style="display: flex; gap: 12px;">
+                <button class="rf-btn secondary" style="flex: 1; font-size: 0.85rem;">ABS: ON</button>
+                <button class="rf-btn secondary" style="flex: 1; font-size: 0.85rem;">TCS: SPORT</button>
+                <button class="rf-btn secondary" style="flex: 1; font-size: 0.85rem;">TRANSMISSION: AUTO</button>
+              </div>
+            </div>
+            <div>
+              <label style="font-family: var(--font-hud); font-weight: 700; color: var(--rf-text-muted); display: block; margin-bottom: 6px;">SYNTHETIC AUDIO</label>
+              <button class="rf-btn secondary" style="width: 100%;" onclick="window.audioManager.setMute(!window.audioManager.isMuted)">
+                TOGGLE MUTE AUDIO
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. IN-GAME RACING HUD -->
+    <div id="racing-hud" class="ui-layer hidden">
+      <!-- Top Timing Bar -->
+      <div class="hud-top-bar">
+        <div class="hud-timing-block">
+          <div class="hud-timing-label">LAP</div>
+          <div id="hud-lap-val" class="hud-timing-val">1 / 3</div>
+        </div>
+        <div class="hud-timing-block">
+          <div class="hud-timing-label">LAP TIME</div>
+          <div id="hud-timer-val" class="hud-timing-val">00:00.000</div>
+        </div>
+        <div class="hud-timing-block">
+          <div class="hud-timing-label">BEST LAP</div>
+          <div id="hud-best-val" class="hud-timing-val">--:--.---</div>
+        </div>
+      </div>
+
+      <!-- Position Display -->
+      <div class="hud-position-box">
+        <span id="hud-pos-val" class="hud-pos-big">1</span>
+        <span class="hud-pos-suffix">ST</span>
+        <span class="hud-pos-total">/ 6</span>
+      </div>
+
+      <!-- Minimap -->
+      <div class="hud-minimap-container">
+        <canvas id="minimap-canvas" width="170" height="170"></canvas>
+      </div>
+
+      <!-- Bottom Right: Speedometer & Tachometer -->
+      <div class="hud-cluster-bottom-right">
+        <div class="speedometer-gauge">
+          <span id="hud-speed" class="speed-digital">0</span>
+          <span class="speed-unit">KM/H</span>
+        </div>
+        <div id="hud-gear" class="gear-indicator">1</div>
+        <div class="rpm-bar-container">
+          <div id="hud-rpm-fill" class="rpm-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Left: Tire Telemetry & Status -->
+      <div class="hud-telemetry-bottom-left">
+        <div class="tire-grid">
+          <div id="tire-fl" class="tire-badge">100%</div>
+          <div id="tire-fr" class="tire-badge">100%</div>
+          <div id="tire-rl" class="tire-badge">100%</div>
+          <div id="tire-rr" class="tire-badge">100%</div>
+        </div>
+        <div class="telemetry-bars-group">
+          <div class="telemetry-mini-row"><span>FUEL</span><span>100%</span></div>
+          <div class="stat-bar-track"><div id="hud-fuel-fill" class="stat-bar-fill" style="width: 100%; background: #00F0FF;"></div></div>
+          <div class="telemetry-mini-row" style="margin-top: 4px;"><span>DAMAGE</span><span>0%</span></div>
+          <div class="stat-bar-track"><div id="hud-damage-fill" class="stat-bar-fill" style="width: 0%; background: #FF2A4D;"></div></div>
+        </div>
+      </div>
+
+      <!-- Drift Score Alert -->
+      <div id="drift-notification">+1,200 DRIFT! x2</div>
+
+      <!-- Countdown Overlay -->
+      <div id="race-countdown-overlay">3</div>
+    </div>
+
+    <!-- 10. POST-RACE RESULTS MODAL -->
+    <div id="results-modal" class="ui-layer hidden">
+      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(5,7,12,0.85); backdrop-filter: blur(12px);">
+        <div class="results-card">
+          <div style="font-family: var(--font-hud); font-size: 1.2rem; letter-spacing: 4px; color: var(--rf-text-muted);">RACE OUTCOME</div>
+          <h1 id="results-pos-text" class="results-position-title p1">P1</h1>
+          <div class="results-grid-stats">
+            <div class="results-stat-box">
+              <div class="results-stat-label">TOTAL TIME</div>
+              <div id="res-total-time" class="results-stat-val">02:45.312</div>
+            </div>
+            <div class="results-stat-box">
+              <div class="results-stat-label">BEST LAP</div>
+              <div id="res-best-lap" class="results-stat-val">00:54.890</div>
+            </div>
+            <div class="results-stat-box">
+              <div class="results-stat-label">CREDITS EARNED</div>
+              <div id="res-credits" class="results-stat-val" style="color: var(--rf-accent-gold);">+$6,200</div>
+            </div>
+            <div class="results-stat-box">
+              <div class="results-stat-label">XP GAINED</div>
+              <div id="res-xp" class="results-stat-val" style="color: var(--rf-accent-cyan);">+1,850 XP</div>
+            </div>
+          </div>
+          <button id="btn-results-continue" class="rf-btn" style="width: 100%; padding: 14px; font-size: 1.2rem;">
+            CONTINUE TO PADDOCK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE ON-SCREEN TOUCH CONTROLS -->
+    <div id="mobile-controls" class="mobile-controls-layer">
+      <div id="touch-steer-left" class="touch-btn">◀</div>
+      <div id="touch-steer-right" class="touch-btn">▶</div>
+      <div id="touch-accelerate" class="touch-btn">GAS</div>
+      <div id="touch-brake" class="touch-btn">BRK</div>
+      <div id="touch-handbrake" class="touch-btn">DRIFT</div>
+      <div id="touch-boost" class="touch-btn">NITRO</div>
+      <div id="touch-camera-switch" class="touch-btn">CAM</div>
+    </div>
+  </div>
+
+  <!-- Raceforge Engine Scripts -->
+  <script src="js/audio/AudioManager.js"></script>
+  <script src="js/tracks/TrackData.js"></script>
+  <script src="js/physics/VehiclePhysics.js"></script>
+  <script src="js/vehicles/VehicleMeshBuilder.js"></script>
+  <script src="js/engine/SceneManager.js"></script>
+  <script src="js/camera/CameraManager.js"></script>
+  <script src="js/ai/AIManager.js"></script>
+  <script src="js/multiplayer/MultiplayerClient.js"></script>
+  <script src="js/ui/UIManager.js"></script>
+  <script src="js/raceforge.js"></script>
+</body>
+</html>
